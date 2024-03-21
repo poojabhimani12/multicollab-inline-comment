@@ -1798,13 +1798,23 @@ class Commenting_block_Admin extends Commenting_block_Functions {
 	/**
 	 * Rest API for Gutenberg Commenting Feature.
 	 */
-	public function cf_rest_api() {
+		public function cf_rest_api() {
 		register_rest_route(
 			'cf',
 			'cf-get-comments-api',
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( $this, 'cf_get_comments' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+
+		register_rest_route(
+			'cf',
+			'cf-get-comments-key-api',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'cf_get_comments_key' ),
 				'permission_callback' => '__return_true',
 			)
 		);
@@ -1853,50 +1863,6 @@ class Commenting_block_Admin extends Commenting_block_Functions {
 	public function sg_register_post_meta_field() {
 		register_post_meta(
 			'',
-			'_sb_is_suggestion_mode',
-			array(
-				'show_in_rest'  => true,
-				'single'        => true,
-				'type'          => 'boolean',
-				'auth_callback' => function() {
-					return true; },
-			)
-		);
-		register_post_meta(
-			'',
-			'_sb_show_suggestion_boards',
-			array(
-				'show_in_rest'  => true,
-				'single'        => true,
-				'type'          => 'boolean',
-				'auth_callback' => function() {
-					return true; },
-			)
-		);
-		register_post_meta(
-			'',
-			'_sb_suggestion_history',
-			array(
-				'show_in_rest'  => true,
-				'single'        => true,
-				'type'          => 'string',
-				'auth_callback' => function() {
-					return true; },
-			)
-		);
-		register_post_meta(
-			'',
-			'_sb_update_block_changes',
-			array(
-				'show_in_rest'  => true,
-				'single'        => true,
-				'type'          => 'string',
-				'auth_callback' => function() {
-					return true; },
-			)
-		);
-		register_post_meta(
-			'',
 			'_is_real_time_mode',
 			array(
 				'show_in_rest'  => true,
@@ -1922,29 +1888,6 @@ class Commenting_block_Admin extends Commenting_block_Functions {
 
 	}
 
-	/**
-	 * ajax call to update suggestion history post meta
-	 */
-	public function sg_update_suggestion_history() {
-
-		/* Check for nonce verification.*/
-		check_ajax_referer( COMMENTING_NONCE, 'nonce' );
-
-		if ( isset( $_POST['suggestionHistory'] ) ) {
-			$current_post_id   = filter_input( INPUT_POST, 'currentPostID', FILTER_SANITIZE_NUMBER_INT );
-            $suggestionHistory  = $_POST["suggestionHistory"]; // phpcs:ignore
-			// Update suggestion history.
-			if ( metadata_exists( 'post', $current_post_id, '_sb_suggestion_history' ) ) {
-				update_post_meta( $current_post_id, '_sb_suggestion_history', $suggestionHistory );
-			} else {
-				add_post_meta( $current_post_id, '_sb_suggestion_history', $suggestionHistory );
-			}
-            echo get_post_meta( $current_post_id, '_sb_suggestion_history',true);// phpcs:ignore
-			wp_die();
-		}
-	}
-
-	/* SGEDIT */
 
 	/**
 	 * Function is used to fetch stored comments.
@@ -2026,7 +1969,22 @@ class Commenting_block_Admin extends Commenting_block_Functions {
 		$data['assignedTo']      = $assigned_to;
 		return rest_ensure_response( $data );
 	}
+	/**
+	 * Function is used to fetch open comments key.
+	 *
+	 * @return mixed|\WP_REST_Response
+	 */
+	public function cf_get_comments_key() {
 
+		$current_post_id = filter_input( INPUT_GET, 'currentPostID', FILTER_SANITIZE_NUMBER_INT );
+		$userDetails     = array();
+		$elID            = filter_input( INPUT_GET, 'elID', FILTER_SANITIZE_SPECIAL_CHARS );
+
+		$commentList     = get_post_meta( $current_post_id, $elID, true );
+		
+		return rest_ensure_response( $commentList );
+	}
+	
 	/**
 	 * Fetch User Email List.
 	 */
