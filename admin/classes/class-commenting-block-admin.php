@@ -518,35 +518,6 @@ class Commenting_block_Admin extends Commenting_block_Functions {
 		wp_die();
 	}
 
-	/**
-	 * Daily cron for check license key status.
-	 *
-	 * @return void
-	 */
-	public function cf_daily_license_checker_callback_function() {
-
-		// Set webhook URL.
-		$cf_websocket_options = get_option( 'cf_websocket_options' );
-		$cf_edd = new CF_EDD();
-		if( 'cf_websocket_default' === $cf_websocket_options ) {
-
-			$cf_websocket_url  = CF_STORE_URL . 'wp-json/cf-websocket-url/v2/cf-websocket-url?' . wp_rand();
-			if ( function_exists( 'vip_safe_wp_remote_get' ) ) {
-				$cf_websocket_url_request = vip_safe_wp_remote_get( $cf_websocket_url, 3, 1, 20 ); //phpcs:ignore
-			} else {
-				$cf_websocket_url_request = wp_remote_get( $cf_websocket_url ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_remote_get_wp_remote_get
-			}
-			$cf_websocket_url_request_body = $cf_websocket_url_request['body'];
-			$cf_websocket_url_request_data = json_decode( $cf_websocket_url_request_body, true );
-			
-			if ( $cf_edd->is__premium_only() ) {
-				update_option( 'cf_multiedit_websocket', isset($cf_websocket_url_request_data['pro']['wsurl']) ? $cf_websocket_url_request_data['pro']['wsurl'] : '' );
-			} else {
-				update_option( 'cf_multiedit_websocket', isset($cf_websocket_url_request_data['free']['wsurl']) ? $cf_websocket_url_request_data['free']['wsurl'] : '' );
-			}
-			
-		}
-	}
 
 	/**
 	 * Add function to add HTML to admin footer.
